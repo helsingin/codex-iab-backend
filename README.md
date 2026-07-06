@@ -1,14 +1,23 @@
 # codex-iab-backend
 
-Local IAB backend for Codex Browser Use.
+Standalone IAB backend for Codex Browser Use.
 
 ## Why
 
-Codex Browser Use discovers in-app-browser backends over local IAB sockets. If
-no backend is registered, Browser Use cannot open or verify local pages.
+Codex Browser Use depends on discovering and attaching to a session-scoped
+IAB-compatible browser backend. When that backend is missing, unavailable, or
+the native pipe/handshake fails, Browser Use cannot inspect or control a browser
+surface.
 
-This plugin starts a per-session headless Chrome backend and advertises it on
-`/tmp/codex-browser-use` with the current Codex session id.
+This is a known failure class, not a one-off local configuration issue:
+
+- [Browser Use IAB backend cannot attach](https://github.com/openai/codex/issues/20248)
+- [Browser Use IAB backend fails to connect on Windows](https://github.com/openai/codex/issues/20846)
+- [Windows: Chrome browser backend missing](https://github.com/openai/codex/issues/30688)
+
+`codex-iab-backend` makes the backend explicit. It starts a per-session
+headless Chrome backend, publishes it on `/tmp/codex-browser-use`, and
+advertises the active Codex session id so Browser Use can discover it.
 
 ## Install
 
@@ -32,7 +41,7 @@ make plugin-smoke
 make cleanup
 ```
 
-## Notes
+## Status
 
 - Tested on macOS only so far.
 - Not an MCP server.
