@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$PLUGIN_ROOT/scripts/start-session-backend.mjs\"",
+            "timeout": 15,
+            "statusMessage": "Starting local IAB backend"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "codex-iab-backend",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/helsingin/codex-iab-backend.git"
+  },
+  "bin": {
+    "codex-iab-backend": "./src/cli.mjs"
+  },
+  "scripts": {
+    "cleanup": "node scripts/cleanup-backends.mjs",
+    "plugin:install": "node scripts/install-plugin.mjs",
+    "plugin:package": "node scripts/package-plugin.mjs",
+    "plugin:smoke": "node scripts/smoke-session-hook.mjs",
+    "plugin:validate": "node scripts/validate-plugin.mjs",
+    "probe": "node scripts/probe-socket.mjs",
+    "start": "node src/cli.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:integration": "node test/integration/chrome-engine.mjs",
+    "verify": "npm test && npm run test:integration && npm run plugin:validate"
+  }
+}
