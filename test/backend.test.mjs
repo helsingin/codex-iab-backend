@@ -17,8 +17,8 @@ test("routes direct session methods to the engine", async () => {
   const engine = fakeEngine();
   const backend = new CodexIabBackend({ engine, sessionId: "session-1" });
 
-  assert.deepEqual(await backend.handle("createTab"), { id: "1", url: "about:blank", active: true });
-  assert.deepEqual(await backend.handle("getTabs"), [{ id: "1", url: "about:blank", active: true }]);
+  assert.deepEqual(await backend.handle("createTab"), { id: 1, url: "about:blank", active: true });
+  assert.deepEqual(await backend.handle("getTabs"), [{ id: 1, url: "about:blank", active: true }]);
 });
 
 test("routes command payloads to browser operations", async () => {

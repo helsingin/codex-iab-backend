@@ -44,9 +44,9 @@ export class CodexIabBackend {
         return this.info();
       case "getTabs":
       case "getUserTabs":
-        return await this.engine.listTabs();
+        return (await this.engine.listTabs()).map(directTabInfo);
       case "createTab":
-        return await this.engine.createTab();
+        return directTabInfo(await this.engine.createTab());
       case "attach":
       case "detach":
       case "attachTarget":
@@ -57,7 +57,7 @@ export class CodexIabBackend {
       case "allowDownload":
         return {};
       case "claimUserTab":
-        return await this.engine.getPage(params.tabId).info();
+        return directTabInfo(await this.engine.getPage(params.tabId).info());
       case "getUserHistory":
         return [];
       case "finalizeTabs":
@@ -83,19 +83,19 @@ export class CodexIabBackend {
         this.sessionName = command.name ?? null;
         return {};
       case "create_tab":
-        return await this.engine.createTab();
+        return commandTabInfo(await this.engine.createTab());
       case "close_tab":
         return await this.engine.closeTab(command.tab_id);
       case "selected_tab":
-        return await this.engine.selectedTab();
+        return commandTabInfo(await this.engine.selectedTab());
       case "list_tabs":
-        return { tabs: await this.engine.listTabs() };
+        return { tabs: (await this.engine.listTabs()).map(commandTabInfo) };
       case "browser_user_open_tabs":
-        return { tabs: await this.engine.listTabs() };
+        return { tabs: (await this.engine.listTabs()).map(commandTabInfo) };
       case "browser_user_history":
         return { items: [] };
       case "browser_user_claim_tab":
-        return await this.engine.getPage(command.tab_id).info();
+        return commandTabInfo(await this.engine.getPage(command.tab_id).info());
       case "finalize_tabs":
       case "mark_tab":
         return {};
@@ -142,4 +142,16 @@ export function rpcError(id, error) {
       message: error instanceof Error ? error.message : String(error),
     },
   };
+}
+
+function directTabInfo(tab) {
+  if (!tab || typeof tab !== "object") return tab;
+  const numericId = Number(tab.id);
+  if (!Number.isInteger(numericId) || numericId <= 0) return tab;
+  return { ...tab, id: numericId };
+}
+
+function commandTabInfo(tab) {
+  if (!tab || typeof tab !== "object" || tab.id == null) return tab;
+  return { ...tab, id: String(tab.id) };
 }
