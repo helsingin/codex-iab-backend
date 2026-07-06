@@ -34,6 +34,7 @@ make cleanup
 
 ## Notes
 
+- Tested on macOS only so far.
 - Not an MCP server.
 - No npm dependencies.
 - Uses local Chrome through Chrome DevTools Protocol.
