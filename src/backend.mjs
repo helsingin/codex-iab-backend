@@ -1,6 +1,7 @@
 import os from "node:os";
+import { EventEmitter } from "node:events";
 
-export class CodexIabBackend {
+export class CodexIabBackend extends EventEmitter {
   constructor({
     buildFlavor = "prod",
     engine,
@@ -8,6 +9,7 @@ export class CodexIabBackend {
     name = "Local IAB Backend",
     sessionId,
   }) {
+    super();
     if (!sessionId) throw new Error("sessionId is required");
     if (!engine) throw new Error("engine is required");
     this.buildFlavor = buildFlavor;
@@ -16,6 +18,8 @@ export class CodexIabBackend {
     this.name = name;
     this.sessionId = sessionId;
     this.sessionName = null;
+    this.engine.on?.("cdpEvent", (event) => this.emit("notification", { method: "onCDPEvent", params: event }));
+    this.engine.on?.("cdpDetach", (source) => this.emit("notification", { method: "onCDPDetach", params: source }));
   }
 
   info() {

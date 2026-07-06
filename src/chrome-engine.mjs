@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { EventEmitter } from "node:events";
 import { existsSync } from "node:fs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
@@ -11,7 +12,7 @@ const DEFAULT_CHROME_PATHS = [
   "/Applications/Chromium.app/Contents/MacOS/Chromium",
 ];
 
-export class ChromeEngine {
+export class ChromeEngine extends EventEmitter {
   constructor({
     chromePath,
     headless = true,
@@ -19,6 +20,7 @@ export class ChromeEngine {
     viewport = { width: 1280, height: 720 },
     startupTimeoutMs = 10000,
   } = {}) {
+    super();
     this.chromePath = chromePath;
     this.headless = headless;
     this.userDataDir = userDataDir;
@@ -267,6 +269,13 @@ class ChromePage {
 
   async connect() {
     await this.connection.connect();
+    this.connection.addEventListener("*", ({ method, params }) => {
+      this.engine.emit("cdpEvent", {
+        method,
+        params,
+        source: { tabId: Number(this.id) },
+      });
+    });
     await Promise.all([
       this.connection.send("Page.enable"),
       this.connection.send("Runtime.enable"),
@@ -278,6 +287,7 @@ class ChromePage {
     this.closed = true;
     await this.connection.close().catch(() => {});
     await this.engine.browserConnection?.send("Target.closeTarget", { targetId: this.targetId }).catch(() => {});
+    this.engine.emit("cdpDetach", { tabId: Number(this.id) });
   }
 
   async info(extra = {}) {

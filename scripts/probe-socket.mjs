@@ -34,9 +34,10 @@ export function sendRpc(socketPath, message, timeoutMs = 2000) {
         buffered = Buffer.concat([buffered, chunk]);
         const decoded = decodeFrames(buffered);
         buffered = decoded.remaining;
-        if (decoded.messages[0]) {
+        const response = decoded.messages.find((item) => item.id === message.id);
+        if (response) {
           socket.end();
-          finish(null, decoded.messages[0]);
+          finish(null, response);
         }
       } catch (error) {
         socket.destroy();

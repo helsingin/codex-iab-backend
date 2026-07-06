@@ -113,9 +113,9 @@ export class CdpConnection {
     }
 
     if (typeof message.method === "string") {
-      for (const listener of this.eventListeners.get(message.method) ?? []) {
-        listener(message.params ?? {});
-      }
+      const params = message.params ?? {};
+      for (const listener of this.eventListeners.get(message.method) ?? []) listener(params);
+      for (const listener of this.eventListeners.get("*") ?? []) listener({ method: message.method, params });
     }
   }
 

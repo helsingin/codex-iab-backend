@@ -19,12 +19,16 @@ export class IabSocketServer {
     this.server = null;
     this.sockets = new Set();
     this.lastActivity = Date.now();
+    this.backendNotificationHandler = ({ method, params }) => {
+      this.broadcast({ jsonrpc: "2.0", method, params });
+    };
   }
 
   async start() {
     if (this.server) return this;
     await mkdir(path.dirname(this.socketPath), { recursive: true });
     await rm(this.socketPath, { force: true });
+    this.backend.on?.("notification", this.backendNotificationHandler);
 
     this.server = net.createServer((socket) => {
       this.sockets.add(socket);
@@ -65,6 +69,7 @@ export class IabSocketServer {
   async stop() {
     const server = this.server;
     this.server = null;
+    this.backend.off?.("notification", this.backendNotificationHandler);
 
     if (server) {
       for (const socket of this.sockets) socket.destroy();
@@ -86,6 +91,13 @@ export class IabSocketServer {
       socket.write(encodeFrame(rpcResult(message.id, result)));
     } catch (error) {
       socket.write(encodeFrame(rpcError(message.id, error)));
+    }
+  }
+
+  broadcast(message) {
+    const frame = encodeFrame(message);
+    for (const socket of this.sockets) {
+      if (!socket.destroyed) socket.write(frame);
     }
   }
 }

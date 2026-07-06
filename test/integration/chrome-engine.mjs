@@ -7,6 +7,8 @@ const engine = new ChromeEngine({ headless: true });
 try {
   await engine.start();
   const tab = await engine.createTab();
+  const cdpEvents = [];
+  engine.on("cdpEvent", (event) => cdpEvents.push(event));
   await engine.navigateTab(tab.id, "data:text/html,<title>IAB Test</title><main>ready</main>", { timeout_ms: 3000 });
   await engine.waitForLoadState(tab.id, { state: "domcontentloaded", timeoutMs: 1000 });
   await engine.waitForLoadState(tab.id, { state: "load", timeoutMs: 1000 });
@@ -16,6 +18,7 @@ try {
 
   assert.equal(tabs.length, 1);
   assert.equal(tabs[0].title, "IAB Test");
+  assert.ok(cdpEvents.some((event) => event.method === "Page.loadEventFired" && event.source.tabId === Number(tab.id)));
   assert.match(snapshot.dom_snapshot, /ready/);
   assert.ok(screenshot.data.length > 1000);
 
