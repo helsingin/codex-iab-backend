@@ -7,7 +7,9 @@ const engine = new ChromeEngine({ headless: true });
 try {
   await engine.start();
   const tab = await engine.createTab();
-  await engine.navigateTab(tab.id, "data:text/html,<title>IAB Test</title><main>ready</main>");
+  await engine.navigateTab(tab.id, "data:text/html,<title>IAB Test</title><main>ready</main>", { timeout_ms: 3000 });
+  await engine.waitForLoadState(tab.id, { state: "domcontentloaded", timeoutMs: 1000 });
+  await engine.waitForLoadState(tab.id, { state: "load", timeoutMs: 1000 });
   const tabs = await engine.listTabs();
   const snapshot = await engine.domSnapshot(tab.id);
   const screenshot = await engine.screenshot(tab.id);

@@ -285,7 +285,8 @@ class ChromePage {
     return { id: this.id, ...value, ...extra };
   }
 
-  async navigate(url, { timeoutMs = 15000 } = {}) {
+  async navigate(url, { timeout_ms: timeoutMsSnake, timeoutMs: timeoutMsCamel } = {}) {
+    const timeoutMs = timeoutMsCamel ?? timeoutMsSnake ?? 15000;
     const loadPromise = this.connection.waitForEvent("Page.loadEventFired", { timeoutMs }).catch(() => null);
     const result = await this.connection.send("Page.navigate", { url }, { timeoutMs });
     if (result.errorText) throw new Error(`Navigation failed: ${result.errorText}`);
@@ -357,6 +358,7 @@ class ChromePage {
   async waitForLoadState({ state = "load", timeout_ms: timeoutMs, timeoutMs: timeoutMsCamel } = {}) {
     const timeout = timeoutMsCamel ?? timeoutMs ?? 10000;
     if (state === "domcontentloaded") {
+      if (await this.hasReachedReadyState(["interactive", "complete"], timeout)) return;
       await this.connection.waitForEvent("Page.domContentEventFired", { timeoutMs: timeout });
       return;
     }
@@ -364,7 +366,17 @@ class ChromePage {
       await new Promise((resolve) => setTimeout(resolve, Math.min(timeout, 500)));
       return;
     }
+    if (await this.hasReachedReadyState(["complete"], timeout)) return;
     await this.connection.waitForEvent("Page.loadEventFired", { timeoutMs: timeout });
+  }
+
+  async hasReachedReadyState(acceptedStates, timeoutMs) {
+    try {
+      const readyState = await this.evaluateExpression("document.readyState", { timeoutMs: Math.min(timeoutMs, 1000) });
+      return acceptedStates.includes(readyState);
+    } catch {
+      return false;
+    }
   }
 
   async waitForUrl({ url, timeout_ms: timeoutMs, timeoutMs: timeoutMsCamel } = {}) {
