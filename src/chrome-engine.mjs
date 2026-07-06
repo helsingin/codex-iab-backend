@@ -243,6 +243,11 @@ export class ChromeEngine {
     return target;
   }
 
+  async targetMetadata(targetId) {
+    const targets = await this.fetchJson(`/json/list`);
+    return targets.find((item) => item.id === targetId) ?? {};
+  }
+
   async fetchJson(route) {
     const response = await fetch(`http://127.0.0.1:${this.port}${route}`);
     if (!response.ok) throw new Error(`Chrome DevTools HTTP ${response.status} for ${route}`);
@@ -276,11 +281,17 @@ class ChromePage {
   }
 
   async info(extra = {}) {
-    let value = {};
+    const target = await this.engine.targetMetadata(this.targetId).catch(() => ({}));
+    let value = {
+      title: target.title || undefined,
+      url: target.url || undefined,
+    };
+    if (value.title || value.url) return { id: this.id, ...value, ...extra };
     try {
-      value = await this.evaluateExpression("({ title: document.title || undefined, url: location.href || undefined })");
+      value = await this.evaluateExpression("({ title: document.title || undefined, url: location.href || undefined })", {
+        timeoutMs: 500,
+      });
     } catch {
-      value = {};
     }
     return { id: this.id, ...value, ...extra };
   }

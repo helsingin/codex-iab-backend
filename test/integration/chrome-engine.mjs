@@ -19,6 +19,15 @@ try {
   assert.match(snapshot.dom_snapshot, /ready/);
   assert.ok(screenshot.data.length > 1000);
 
+  const busyUrl = "data:text/html,<title>Busy Tab</title><script>while(true){}</script>";
+  const busyTab = await engine.createTab(busyUrl);
+  const busyTabs = await Promise.race([
+    engine.listTabs(),
+    new Promise((_, reject) => setTimeout(() => reject(new Error("listTabs timed out for busy tab")), 2500)),
+  ]);
+
+  assert.ok(busyTabs.some((item) => item.id === busyTab.id));
+
   console.log("chrome engine integration ok");
 } finally {
   await engine.stop();
