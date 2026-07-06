@@ -61,6 +61,30 @@ test("broadcasts backend notifications to connected clients", async () => {
   }
 });
 
+test("does not unlink an active socket owned by another backend", async () => {
+  const pipeDir = await mkdtemp(path.join(os.tmpdir(), "iab-server-test-"));
+  const first = new IabSocketServer({
+    backend: new CodexIabBackend({ engine: { listTabs: async () => [] }, sessionId: "session-1" }),
+    pipeDir,
+    socketName: "backend.sock",
+  });
+  const second = new IabSocketServer({
+    backend: new CodexIabBackend({ engine: { listTabs: async () => [] }, sessionId: "session-2" }),
+    pipeDir,
+    socketName: "backend.sock",
+  });
+
+  await first.start();
+  try {
+    await assert.rejects(() => second.start(), /IAB socket is already active/);
+    const response = await sendRpc(first.socketPath, { jsonrpc: "2.0", id: 1, method: "getInfo", params: {} });
+    assert.equal(response.result.metadata.codexSessionId, "session-1");
+  } finally {
+    await first.stop();
+    await rm(pipeDir, { force: true, recursive: true });
+  }
+});
+
 class FakeBackend extends EventEmitter {
   async handle(method) {
     if (method === "getInfo") {

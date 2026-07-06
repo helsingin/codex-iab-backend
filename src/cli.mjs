@@ -4,6 +4,7 @@ import process from "node:process";
 import { CodexIabBackend } from "./backend.mjs";
 import { ChromeEngine } from "./chrome-engine.mjs";
 import { IabSocketServer } from "./server.mjs";
+import { sessionSocketName } from "./session-hook.mjs";
 
 const args = parseArgs(process.argv.slice(2));
 const headlessValue = args.headless ?? process.env.CODEX_IAB_HEADLESS;
@@ -29,7 +30,7 @@ const backend = new CodexIabBackend({
 const server = new IabSocketServer({
   backend,
   pipeDir: args.pipeDir ?? process.env.CODEX_IAB_PIPE_DIR ?? "/tmp/codex-browser-use",
-  socketName: args.socketName ?? process.env.CODEX_IAB_SOCKET_NAME,
+  socketName: args.socketName ?? process.env.CODEX_IAB_SOCKET_NAME ?? sessionSocketName(sessionId),
 });
 
 await engine.start();

@@ -119,6 +119,40 @@ export class CodexIabBackend extends EventEmitter {
         return await this.engine.evaluate(command.tab_id, command.script, command);
       case "playwright_dom_snapshot":
         return await this.engine.domSnapshot(command.tab_id);
+      case "playwright_locator_count":
+        return await this.engine.locatorCount(command.tab_id, command);
+      case "playwright_locator_fill":
+        return await this.engine.locatorFill(command.tab_id, command);
+      case "playwright_locator_click":
+        return await this.engine.locatorClick(command.tab_id, command);
+      case "playwright_locator_dblclick":
+        return await this.engine.locatorDblClick(command.tab_id, command);
+      case "playwright_locator_press":
+        return await this.engine.locatorPress(command.tab_id, command);
+      case "playwright_locator_wait_for":
+        return await this.engine.locatorWaitFor(command.tab_id, command);
+      case "playwright_locator_all_text_contents":
+        return await this.engine.locatorAllTextContents(command.tab_id, command);
+      case "playwright_locator_text_content":
+        return await this.engine.locatorTextContent(command.tab_id, command);
+      case "playwright_locator_inner_text":
+        return await this.engine.locatorInnerText(command.tab_id, command);
+      case "playwright_locator_get_attribute":
+        return await this.engine.locatorGetAttribute(command.tab_id, command);
+      case "playwright_locator_is_visible":
+        return await this.engine.locatorIsVisible(command.tab_id, command);
+      case "playwright_locator_is_enabled":
+        return await this.engine.locatorIsEnabled(command.tab_id, command);
+      case "playwright_locator_read_all":
+        return await this.engine.locatorReadAll(command.tab_id, command);
+      case "playwright_locator_select_option":
+        return await this.engine.locatorSelectOption(command.tab_id, command);
+      case "playwright_locator_set_checked":
+        return await this.engine.locatorSetChecked(command.tab_id, command);
+      case "playwright_element_info":
+        return await this.engine.elementInfo(command.tab_id, command);
+      case "playwright_element_screenshot":
+        return await this.engine.elementScreenshot(command.tab_id, command);
       case "playwright_wait_for_load_state":
         return await this.engine.waitForLoadState(command.tab_id, command);
       case "playwright_wait_for_url":

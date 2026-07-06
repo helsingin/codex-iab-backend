@@ -66,6 +66,10 @@ socket files.
 CODEX_SESSION_ID=<session-id> npm start
 ```
 
+Manual runs use `/tmp/codex-browser-use/codex-iab-<session-id>.sock` by
+default. A second backend will refuse to start if that socket is already active;
+stop the existing process first instead of starting duplicate session backends.
+
 Useful flags:
 
 ```sh
@@ -109,6 +113,8 @@ This reads state files under `/tmp/codex-iab-backend`, kills recorded backend PI
 - `CODEX_IAB_CHROME_PATH`: explicit Chrome binary path.
 - `CODEX_IAB_HEADLESS`: defaults to `true`.
 - `CODEX_IAB_IDLE_TIMEOUT_MS`: idle shutdown timer for session backends.
+- `CODEX_IAB_DEBUG_CDP`: set to `1` to log CDP method, target, elapsed time,
+  and errors for Browser Use compatibility debugging.
 - `CODEX_IAB_BACKEND_HOOK_DUMP`: write hook payload/result JSON for tests.
 - `PLUGIN_ROOT`: provided by Codex to plugin hook commands; used to locate packaged scripts.
 - `PLUGIN_DATA`: provided by Codex to plugin hook commands; reserved for future plugin-owned state.
@@ -164,4 +170,10 @@ make plugin-smoke
 
 ```sh
 make cleanup
+```
+
+If a manually-started backend was not recorded in state, find the socket owner:
+
+```sh
+lsof -U | grep codex-iab-<session-id>.sock
 ```

@@ -49,6 +49,12 @@ The browser client filters IAB candidates by `metadata.codexSessionId`. That is 
 7. Browser Use discovery selects that socket for the current session.
 8. The backend exits after `CODEX_IAB_IDLE_TIMEOUT_MS` of inactivity when configured.
 
+`src/cli.mjs` also uses the stable `codex-iab-<session-id>.sock` name for
+manual `CODEX_SESSION_ID=<id> npm start` runs. `IabSocketServer.start()` refuses
+to unlink an active socket; this prevents duplicate session backends and the
+unlinked-live-socket failure mode where Browser Use can no longer discover a
+running backend.
+
 Hook payload shape observed in local testing:
 
 ```json
@@ -96,6 +102,11 @@ The backend launches local Chrome with:
 
 No Playwright package is required. The implementation talks directly to Chrome DevTools Protocol over WebSocket using built-in Node APIs.
 
+Some Codex Browser Use Playwright helpers execute through CDP when CDP access is
+available. `src/chrome-engine.mjs` carries compatibility shims for that path,
+including a small `incrementalAriaSnapshot` polyfill used by `domSnapshot()`
+when the injected Browser Use helper does not provide it.
+
 ## Supported Operations
 
 Current supported path:
@@ -107,13 +118,15 @@ Current supported path:
 - screenshots
 - simple DOM snapshot
 - read-only `playwright.evaluate`
+- Playwright-style DOM locator reads and actions used by Codex Browser Use
+- element-at-coordinate inspection and annotated screenshots
 - wait-for-load-state, wait-for-url, wait-for-timeout
 - limited direct `executeCdp`
 
 ## Known Limitations
 
-- Locator click/fill APIs are not fully implemented yet.
-- Clipboard, downloads, browser auth, and full DevTools event buffering are not implemented.
+- Download handling, file chooser handling, clipboard, browser auth, and full
+  DevTools event buffering are not implemented.
 - The DOM snapshot is intentionally simple and bounded.
 - Session cleanup is idle-timeout based; there is no Codex `SessionStop` hook used here.
 - Browser Use URL policy still applies before navigation reaches this backend.

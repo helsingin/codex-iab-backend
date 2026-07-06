@@ -27,6 +27,9 @@ export class IabSocketServer {
   async start() {
     if (this.server) return this;
     await mkdir(path.dirname(this.socketPath), { recursive: true });
+    if (await acceptsConnection(this.socketPath)) {
+      throw new Error(`IAB socket is already active: ${this.socketPath}`);
+    }
     await rm(this.socketPath, { force: true });
     this.backend.on?.("notification", this.backendNotificationHandler);
 
@@ -100,4 +103,24 @@ export class IabSocketServer {
       if (!socket.destroyed) socket.write(frame);
     }
   }
+}
+
+async function acceptsConnection(socketPath) {
+  return await new Promise((resolve) => {
+    const socket = net.createConnection(socketPath);
+    const timeout = setTimeout(() => {
+      socket.destroy();
+      resolve(false);
+    }, 200);
+
+    socket.on("connect", () => {
+      clearTimeout(timeout);
+      socket.end();
+      resolve(true);
+    });
+    socket.on("error", () => {
+      clearTimeout(timeout);
+      resolve(false);
+    });
+  });
 }
