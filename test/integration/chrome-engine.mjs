@@ -9,7 +9,11 @@ try {
   const tab = await engine.createTab();
   const cdpEvents = [];
   engine.on("cdpEvent", (event) => cdpEvents.push(event));
-  await engine.navigateTab(tab.id, "data:text/html,<title>IAB Test</title><main>ready</main>", { timeout_ms: 3000 });
+  await engine.navigateTab(
+    tab.id,
+    "data:text/html,<title>IAB Test</title><script>window.__iabGlobalProbe={answer:42}</script><main>ready</main>",
+    { timeout_ms: 3000 },
+  );
   await engine.waitForLoadState(tab.id, { state: "domcontentloaded", timeoutMs: 1000 });
   await engine.waitForLoadState(tab.id, { state: "load", timeoutMs: 1000 });
   const tabs = await engine.listTabs();
@@ -21,6 +25,10 @@ try {
   assert.ok(cdpEvents.some((event) => event.method === "Page.loadEventFired" && event.source.tabId === Number(tab.id)));
   assert.match(snapshot.dom_snapshot, /ready/);
   assert.ok(screenshot.data.length > 1000);
+  assert.deepEqual(await engine.evaluate(tab.id, "window.__iabGlobalProbe"), { value: { answer: 42 } });
+  assert.deepEqual(await engine.evaluate(tab.id, "() => window.__iabGlobalProbe.answer"), { value: 42 });
+  assert.deepEqual(await engine.evaluate(tab.id, "(() => window.__iabGlobalProbe.answer)()"), { value: 42 });
+  assert.deepEqual(await engine.evaluate(tab.id, "return window.__iabGlobalProbe.answer;"), { value: 42 });
 
   const busyUrl = "data:text/html,<title>Busy Tab</title><script>while(true){}</script>";
   const busyTab = await engine.createTab(busyUrl);

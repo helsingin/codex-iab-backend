@@ -264,11 +264,18 @@ class ChromePage {
     this.id = id;
     this.targetId = targetId;
     this.connection = new CdpConnection(connectionUrl);
+    this.mainExecutionContextId = null;
     this.closed = false;
   }
 
   async connect() {
     await this.connection.connect();
+    this.connection.addEventListener("Runtime.executionContextCreated", ({ context }) => {
+      if (context?.auxData?.isDefault) this.mainExecutionContextId = context.id;
+    });
+    this.connection.addEventListener("Runtime.executionContextsCleared", () => {
+      this.mainExecutionContextId = null;
+    });
     this.connection.addEventListener("*", ({ method, params }) => {
       this.engine.emit("cdpEvent", {
         method,
@@ -342,19 +349,28 @@ class ChromePage {
 
   async evaluateScript(script, { timeout_ms: timeoutMs, timeoutMs: timeoutMsCamel } = {}) {
     const timeout = timeoutMsCamel ?? timeoutMs ?? 5000;
-    return await this.evaluateExpression(`(async () => {\n${script}\n})()`, { timeoutMs: timeout });
+    const source = String(script ?? "undefined");
+    try {
+      return await this.evaluateExpression(playwrightEvaluateExpression(source), { timeoutMs: timeout });
+    } catch (error) {
+      if (!isEvaluationSyntaxError(error)) throw error;
+      return await this.evaluateExpression(`(async () => {\n${source}\n})()`, { timeoutMs: timeout });
+    }
   }
 
   async evaluateExpression(expression, { timeoutMs = 5000 } = {}) {
+    const params = {
+      expression,
+      awaitPromise: true,
+      returnByValue: true,
+      timeout: timeoutMs,
+      userGesture: false,
+    };
+    if (this.mainExecutionContextId != null) params.contextId = this.mainExecutionContextId;
+
     const result = await this.connection.send(
       "Runtime.evaluate",
-      {
-        expression,
-        awaitPromise: true,
-        returnByValue: true,
-        timeout: timeoutMs,
-        userGesture: false,
-      },
+      params,
       { timeoutMs: timeoutMs + 1000 },
     );
 
@@ -436,6 +452,22 @@ function remoteObjectValue(result) {
       }
       return undefined;
   }
+}
+
+function playwrightEvaluateExpression(source) {
+  return `(async () => {
+const __codexEvalValue = (${source});
+if (typeof __codexEvalValue === "function") return await __codexEvalValue();
+return await __codexEvalValue;
+})()`;
+}
+
+function isEvaluationSyntaxError(error) {
+  const message = String(error?.message ?? error);
+  return message.includes("SyntaxError") ||
+    message.includes("Unexpected token") ||
+    message.includes("Unexpected identifier") ||
+    message.includes("Illegal return statement");
 }
 
 function domSnapshotSource() {
