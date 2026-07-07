@@ -37,7 +37,15 @@ export class ChromeEngine extends EventEmitter {
   }
 
   async start() {
-    if (this.process) return this;
+    if (this.process) {
+      if (this.process.exitCode != null) {
+        this.process = null;
+        this.browserConnection = null;
+      } else if (this.browserConnection) {
+        await this.browserConnection.connect();
+        return this;
+      }
+    }
 
     const chromePath = this.chromePath ?? findChromePath();
     if (!chromePath) {
